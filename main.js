@@ -100,10 +100,6 @@ const controls = {
 };
 
 // --- MOUSE CONTROLS (Pointer Lock) ---
-// Add these variables for FPS-style camera control
-let yaw = 0;
-let pitch = 0;
-
 const instructions = document.getElementById('instructions');
 document.addEventListener('click', () => {
     document.body.requestPointerLock();
@@ -121,14 +117,12 @@ document.addEventListener('pointerlockchange', () => {
 
 function onMouseMove(event) {
     if (document.pointerLockElement === document.body) {
-        // Update yaw and pitch based on mouse movement
-        yaw -= event.movementX * 0.002;
-        pitch -= event.movementY * 0.002; // Subtract to fix inversion
-        // Clamp pitch to prevent flipping
-        pitch = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, pitch));
-        // Update camera rotation using the original method
-        camera.rotation.y = yaw;
-        camera.rotation.x = pitch;
+        // Simple camera rotation - mouse up = look up, mouse down = look down
+        camera.rotation.y -= event.movementX * 0.002;
+        camera.rotation.x -= event.movementY * 0.002;
+        
+        // Clamp vertical rotation to prevent flipping
+        camera.rotation.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, camera.rotation.x));
     }
 }
 
