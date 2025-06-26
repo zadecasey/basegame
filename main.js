@@ -93,6 +93,10 @@ const controls = {
 };
 
 // --- MOUSE CONTROLS (Pointer Lock) ---
+// Add these variables for FPS-style camera control
+let yaw = 0;
+let pitch = 0;
+
 const instructions = document.getElementById('instructions');
 document.addEventListener('click', () => {
     document.body.requestPointerLock();
@@ -110,9 +114,13 @@ document.addEventListener('pointerlockchange', () => {
 
 function onMouseMove(event) {
     if (document.pointerLockElement === document.body) {
-        camera.rotation.y -= event.movementX / 500;
-        camera.rotation.x -= event.movementY / 500;
-        camera.rotation.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, camera.rotation.x));
+        // Update yaw and pitch based on mouse movement
+        yaw -= event.movementX * 0.002;
+        pitch -= event.movementY * 0.002;
+        // Clamp pitch to prevent flipping
+        pitch = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, pitch));
+        // Update camera rotation
+        camera.rotation.set(pitch, yaw, 0, 'YXZ');
     }
 }
 
@@ -137,36 +145,32 @@ document.addEventListener('keyup', (event) => {
 });
 
 // --- BLOCK PLACEMENT/REMOVAL ---
-const raycaster = new THREE.Raycaster();
-
-document.addEventListener('mousedown', (event) => {
-    if (document.pointerLockElement !== document.body) return;
-
-    raycaster.setFromCamera({ x: 0, y: 0 }, camera); // Ray from center of screen
-    const intersects = raycaster.intersectObjects(Object.values(meshes));
-
-    if (intersects.length > 0) {
-        const intersection = intersects[0];
-        const position = new THREE.Vector3().copy(intersection.point);
-        const normal = intersection.face.normal;
-
-        if (event.button === 0) { // Left click: Place block
-            position.add(normal.multiplyScalar(0.5));
-            const [x, y, z] = position.toArray().map(v => Math.floor(v));
-            if (getVoxel(x, y, z) === 0) {
-                setVoxel(x, y, z, 1);
-                addVoxelMesh(x, y, z);
-            }
-        } else if (event.button === 2) { // Right click: Remove block
-            position.sub(normal.multiplyScalar(0.5));
-            const [x, y, z] = position.toArray().map(v => Math.floor(v));
-            if (getVoxel(x, y, z) === 1) {
-                setVoxel(x, y, z, 0);
-                removeVoxelMesh(x, y, z);
-            }
-        }
-    }
-});
+// REMOVE the entire mousedown event listener block below:
+// document.addEventListener('mousedown', (event) => {
+//     if (document.pointerLockElement !== document.body) return;
+//     raycaster.setFromCamera({ x: 0, y: 0 }, camera); // Ray from center of screen
+//     const intersects = raycaster.intersectObjects(Object.values(meshes));
+//     if (intersects.length > 0) {
+//         const intersection = intersects[0];
+//         const position = new THREE.Vector3().copy(intersection.point);
+//         const normal = intersection.face.normal;
+//         if (event.button === 0) { // Left click: Place block
+//             position.add(normal.multiplyScalar(0.5));
+//             const [x, y, z] = position.toArray().map(v => Math.floor(v));
+//             if (getVoxel(x, y, z) === 0) {
+//                 setVoxel(x, y, z, 1);
+//                 addVoxelMesh(x, y, z);
+//             }
+//         } else if (event.button === 2) { // Right click: Remove block
+//             position.sub(normal.multiplyScalar(0.5));
+//             const [x, y, z] = position.toArray().map(v => Math.floor(v));
+//             if (getVoxel(x, y, z) === 1) {
+//                 setVoxel(x, y, z, 0);
+//                 removeVoxelMesh(x, y, z);
+//             }
+//         }
+//     }
+// });
 
 // --- PHYSICS UPDATE ---
 function updatePhysics(delta) {
