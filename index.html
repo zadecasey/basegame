@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Full Physics 3D Room</title>
+    <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+    <script src="https://unpkg.com/super-hands@3.0.3/dist/super-hands.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/aframe-physics-system@4.0.1/dist/aframe-physics-system.min.js"></script>
+
+    <script>
+      AFRAME.registerComponent("player-physics-controls", {
+        schema: {
+          speed: { default: 5 },
+        },
+
+        init: function () {
+          this.direction = new THREE.Vector3();
+          this.forward = new THREE.Vector3();
+          this.right = new THREE.Vector3();
+          this.velocity = new Ammo.btVector3();
+          this.keys = {};
+
+          this.el.addEventListener("collide", () => {
+            this.canJump = true;
+          });
+
+          window.addEventListener("keydown", (e) => {
+            this.keys[e.code] = true;
+            if ((e.code === "Space" || e.code === "ArrowUp") && this.canJump) {
+              this.canJump = false;
+              const body = this.el.body;
+              if (body) {
+                body.applyImpulse({ x: 0, y: 5, z: 0 }, this.el.getAttribute("position"));
+              }
+            }
+          });
+
+          window.addEventListener("keyup", (e) => {
+            this.keys[e.code] = false;
+          });
+        },
+
+        tick: function () {
+          const el = this.el;
+          const body = el.body;
+          const camera = el.querySelector("a-camera");
+
+          // Pull movement directions from camera
+          const cam = camera.object3D;
+          cam.getWorldDirection(this.forward);
+          this.forward.y = 0;
+          this.forward.normalize();
+
+          this.right.crossVectors(this.forward, cam.up).normalize();
+
+          let moveX = 0,
+            moveZ = 0;
+
+          if (this.keys["KeyW"] || this.keys["ArrowUp"]) moveZ -= 1;
+          if (this.keys["KeyS"] || this.keys["ArrowDown"]) moveZ += 1;
+          if (this.keys["KeyA"] || this.keys["ArrowLeft"]) moveX -= 1;
+          if (this.keys["KeyD"] || this.keys["ArrowRight"]) moveX += 1;
+
+          const move = this.forward.clone().multiplyScalar(moveZ).add(this.right.clone().multiplyScalar(moveX)).normalize();
+
+          if (body) {
+            this.velocity.setValue(move.x * this.data.speed, body.velocity.y(), move.z * this.data.speed);
+            body.setLinearVelocity(this.velocity);
+          }
+
+          // Respawn if player falls
+          const pos = el.object3D.position;
+          if (pos.y < -10) {
+            el.setAttribute("position", { x: 0, y: 2, z: 0 });
+            if (body) {
+              body.setLinearVelocity(new Ammo.btVector3(0, 0, 0));
+              body.setAngularVelocity(new Ammo.btVector3(0, 0, 0));
+            }
+            this.canJump = false;
+          }
+        },
+      });
+    </script>
+  </head>
+
+  <body>
+    <a-scene physics="debug: false; gravity: -9.8" background="color: #ECECEC">
+      <!-- Ground -->
+      <a-plane
+        position="0 0 0"
+        rotation="-90 0 0"
+        width="40"
+        height="40"
+        color="#7BC8A4"
+        static-body
+      ></a-plane>
+
+      <!-- Walls -->
+      <a-box position="0 2.5 -10" width="20" height="5" depth="0.5" color="#BDBDBD" static-body></a-box>
+      <a-box position="-10 2.5 0" width="0.5" height="5" depth="20" color="#BDBDBD" static-body></a-box>
+      <a-box position="10 2.5 0" width="0.5" height="5" depth="20" color="#BDBDBD" static-body></a-box>
+      <a-box position="0 2.5 10" width="20" height="5" depth="0.5" color="#BDBDBD" static-body></a-box>
+
+      <!-- Some objects -->
+      <a-box position="2 0.5 -3" color="#EF5350" static-body></a-box>
+      <a-sphere position="-2 0.5 -4" radius="0.5" color="#AB47BC" static-body></a-sphere>
+
+      <!-- Player entity -->
+      <a-entity id="player" position="0 2 0" dynamic-body="mass: 1" player-physics-controls>
+        <a-camera look-controls="pointerLockEnabled: true" position="0 1.6 0">
+          <a-cursor></a-cursor>
+        </a-camera>
+      </a-entity>
+    </a-scene>
+  </body>
+</html>
