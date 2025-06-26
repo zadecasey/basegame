@@ -100,6 +100,12 @@ const controls = {
 };
 
 // --- MOUSE CONTROLS (Pointer Lock) ---
+// FPS camera variables
+let mouseX = 0;
+let mouseY = 0;
+let targetRotationX = 0;
+let targetRotationY = 0;
+
 const instructions = document.getElementById('instructions');
 document.addEventListener('click', () => {
     document.body.requestPointerLock();
@@ -117,12 +123,15 @@ document.addEventListener('pointerlockchange', () => {
 
 function onMouseMove(event) {
     if (document.pointerLockElement === document.body) {
-        // Simple camera rotation - mouse up = look up, mouse down = look down
-        camera.rotation.y -= event.movementX * 0.002;
-        camera.rotation.x -= event.movementY * 0.002;
+        // Update target rotations
+        targetRotationY -= event.movementX * 0.002;
+        targetRotationX -= event.movementY * 0.002;
         
         // Clamp vertical rotation to prevent flipping
-        camera.rotation.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, camera.rotation.x));
+        targetRotationX = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, targetRotationX));
+        
+        // Apply rotations using quaternions to avoid gimbal lock
+        camera.quaternion.setFromEuler(new THREE.Euler(targetRotationX, targetRotationY, 0, 'YXZ'));
     }
 }
 
