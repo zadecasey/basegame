@@ -5,7 +5,8 @@ const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x87ceeb); // Sky blue
 
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-camera.position.set(16, 20, 16); // Start high up to see the world
+// Place the camera just above the grass layer (y=2 is grass, so y=3.5 is just above)
+camera.position.set(10, 3.5, 10); // Centered and just above the 20x20 map
 
 const renderer = new THREE.WebGLRenderer({ canvas: document.querySelector('#webgl') });
 renderer.setSize(window.innerWidth, window.innerHeight);
