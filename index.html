@@ -2,7 +2,7 @@
 <html>
   <head>
     <meta charset="utf-8" />
-    <title>Full Physics 3D Room</title>
+    <title>basegame</title>
     <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
     <script src="https://unpkg.com/super-hands@3.0.3/dist/super-hands.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/aframe-physics-system@4.0.1/dist/aframe-physics-system.min.js"></script>
@@ -10,75 +10,78 @@
     <script>
       AFRAME.registerComponent("player-physics-controls", {
         schema: {
-          speed: { default: 5 },
+          speed: { default: 3 },
+          jumpForce: { default: 5 }
         },
-
         init: function () {
           this.direction = new THREE.Vector3();
           this.forward = new THREE.Vector3();
           this.right = new THREE.Vector3();
-          this.velocity = new Ammo.btVector3();
           this.keys = {};
-
-          this.el.addEventListener("collide", () => {
-            this.canJump = true;
-          });
+          this.canJump = false;
+          this.wasOnGround = false;
+          this.groundCheckRay = new THREE.Raycaster();
 
           window.addEventListener("keydown", (e) => {
             this.keys[e.code] = true;
             if ((e.code === "Space" || e.code === "ArrowUp") && this.canJump) {
-              this.canJump = false;
               const body = this.el.body;
               if (body) {
-                body.applyImpulse({ x: 0, y: 5, z: 0 }, this.el.getAttribute("position"));
+                body.applyImpulse({ x: 0, y: this.data.jumpForce, z: 0 }, this.el.getAttribute("position"));
+                this.canJump = false;
               }
             }
           });
-
           window.addEventListener("keyup", (e) => {
             this.keys[e.code] = false;
           });
         },
-
         tick: function () {
           const el = this.el;
           const body = el.body;
           const camera = el.querySelector("a-camera");
+          if (!body || !camera) return;
 
-          // Pull movement directions from camera
-          const cam = camera.object3D;
-          cam.getWorldDirection(this.forward);
+          // --- Ground check (raycast down) ---
+          const pos = el.object3D.position;
+          this.groundCheckRay.set(
+            new THREE.Vector3(pos.x, pos.y, pos.z),
+            new THREE.Vector3(0, -1, 0)
+          );
+          const intersects = this.groundCheckRay.intersectObjects(el.sceneEl.object3D.children, true);
+          // If something is within 1.1 units below, consider on ground
+          this.canJump = intersects.some(i => i.distance < 1.1);
+
+          // --- Movement ---
+          let moveX = 0, moveZ = 0;
+          camera.object3D.getWorldDirection(this.forward);
           this.forward.y = 0;
           this.forward.normalize();
-
-          this.right.crossVectors(this.forward, cam.up).normalize();
-
-          let moveX = 0,
-            moveZ = 0;
-
+          this.right.crossVectors(this.forward, camera.object3D.up).normalize();
           if (this.keys["KeyW"] || this.keys["ArrowUp"]) moveZ -= 1;
           if (this.keys["KeyS"] || this.keys["ArrowDown"]) moveZ += 1;
           if (this.keys["KeyA"] || this.keys["ArrowLeft"]) moveX -= 1;
           if (this.keys["KeyD"] || this.keys["ArrowRight"]) moveX += 1;
-
           const move = this.forward.clone().multiplyScalar(moveZ).add(this.right.clone().multiplyScalar(moveX)).normalize();
-
-          if (body) {
-            this.velocity.setValue(move.x * this.data.speed, body.velocity.y(), move.z * this.data.speed);
-            body.setLinearVelocity(this.velocity);
+          if (move.lengthSq() > 0) {
+            // Only set X/Z velocity, keep Y as is
+            const v = body.velocity;
+            body.setLinearVelocity(new Ammo.btVector3(
+              move.x * this.data.speed,
+              v.y(),
+              move.z * this.data.speed
+            ));
           }
 
-          // Respawn if player falls
-          const pos = el.object3D.position;
+          // --- Respawn if player falls ---
           if (pos.y < -10) {
             el.setAttribute("position", { x: 0, y: 2, z: 0 });
             if (body) {
               body.setLinearVelocity(new Ammo.btVector3(0, 0, 0));
               body.setAngularVelocity(new Ammo.btVector3(0, 0, 0));
             }
-            this.canJump = false;
           }
-        },
+        }
       });
     </script>
   </head>
