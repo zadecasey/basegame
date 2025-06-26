@@ -123,7 +123,7 @@ function onMouseMove(event) {
     if (document.pointerLockElement === document.body) {
         // Update yaw and pitch based on mouse movement
         yaw -= event.movementX * 0.002;
-        pitch += event.movementY * 0.002;
+        pitch -= event.movementY * 0.002;
         // Clamp pitch to prevent flipping
         pitch = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, pitch));
         // Update camera rotation
