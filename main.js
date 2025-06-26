@@ -46,7 +46,25 @@ function setVoxel(x, y, z, value) {
 // Create meshes for the voxels
 const geometry = new THREE.BoxGeometry(1, 1, 1);
 const dirtMaterial = new THREE.MeshLambertMaterial({ color: 0x966F33 }); // Brown
-const grassMaterial = new THREE.MeshLambertMaterial({ color: 0x4CAF50 }); // Bright green
+
+// Create a simple texture for grass blocks
+const grassTexture = new THREE.DataTexture(
+    new Uint8Array([
+        0x4C, 0xAF, 0x50, 0x4C, 0xAF, 0x50, 0x45, 0xA0, 0x47, 0x4C, 0xAF, 0x50,
+        0x45, 0xA0, 0x47, 0x4C, 0xAF, 0x50, 0x4C, 0xAF, 0x50, 0x45, 0xA0, 0x47,
+        0x4C, 0xAF, 0x50, 0x45, 0xA0, 0x47, 0x4C, 0xAF, 0x50, 0x4C, 0xAF, 0x50,
+        0x45, 0xA0, 0x47, 0x4C, 0xAF, 0x50, 0x4C, 0xAF, 0x50, 0x45, 0xA0, 0x47
+    ]),
+    4, 4, THREE.RGBFormat
+);
+grassTexture.wrapS = THREE.RepeatWrapping;
+grassTexture.wrapT = THREE.RepeatWrapping;
+grassTexture.repeat.set(2, 2);
+
+const grassMaterial = new THREE.MeshLambertMaterial({ 
+    color: 0x4CAF50,
+    map: grassTexture
+}); // Bright green with texture
 
 const meshes = {}; // To store meshes for easy removal
 for (let x = 0; x < worldWidth; x++) {
