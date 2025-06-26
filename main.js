@@ -46,7 +46,7 @@ function setVoxel(x, y, z, value) {
 // Create meshes for the voxels
 const geometry = new THREE.BoxGeometry(1, 1, 1);
 const dirtMaterial = new THREE.MeshLambertMaterial({ color: 0x966F33 }); // Brown
-const grassMaterial = new THREE.MeshLambertMaterial({ color: 0x3cb043 }); // Green
+const grassMaterial = new THREE.MeshLambertMaterial({ color: 0x4CAF50 }); // Bright green
 
 const meshes = {}; // To store meshes for easy removal
 for (let x = 0; x < worldWidth; x++) {
