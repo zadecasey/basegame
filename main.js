@@ -19,16 +19,15 @@ directionalLight.position.set(15, 20, 10);
 scene.add(directionalLight);
 
 // --- WORLD GENERATION ---
-const worldWidth = 32, worldDepth = 32, worldHeight = 8;
-const voxels = new Uint8Array(worldWidth * worldHeight * worldDepth); // 1 = block, 0 = air
+const worldWidth = 20, worldDepth = 20, worldHeight = 3;
+const voxels = new Uint8Array(worldWidth * worldHeight * worldDepth); // 1 = dirt, 2 = grass, 0 = air
 
-// Simple terrain generation
+// Flat terrain: 2 layers of dirt, 1 layer of grass
 for (let x = 0; x < worldWidth; x++) {
     for (let z = 0; z < worldDepth; z++) {
-        const height = Math.floor(Math.sin(x / worldWidth * Math.PI * 2) * 2 + Math.cos(z / worldDepth * Math.PI * 2) * 2 + worldHeight / 2);
-        for (let y = 0; y < height; y++) {
-            setVoxel(x, y, z, 1);
-        }
+        setVoxel(x, 0, z, 1); // dirt
+        setVoxel(x, 1, z, 1); // dirt
+        setVoxel(x, 2, z, 2); // grass
     }
 }
 
@@ -45,7 +44,8 @@ function setVoxel(x, y, z, value) {
 
 // Create meshes for the voxels
 const geometry = new THREE.BoxGeometry(1, 1, 1);
-const material = new THREE.MeshLambertMaterial({ color: 0x966F33 }); // Brownish color
+const dirtMaterial = new THREE.MeshLambertMaterial({ color: 0x966F33 }); // Brown
+const grassMaterial = new THREE.MeshLambertMaterial({ color: 0x3cb043 }); // Green
 
 const meshes = {}; // To store meshes for easy removal
 for (let x = 0; x < worldWidth; x++) {
@@ -59,6 +59,12 @@ for (let x = 0; x < worldWidth; x++) {
 }
 
 function addVoxelMesh(x, y, z) {
+    let material;
+    if (getVoxel(x, y, z) === 2) {
+        material = grassMaterial;
+    } else {
+        material = dirtMaterial;
+    }
     const mesh = new THREE.Mesh(geometry, material);
     mesh.position.set(x + 0.5, y + 0.5, z + 0.5);
     scene.add(mesh);
